@@ -599,7 +599,7 @@ async def cancel_task(task_id: str, request: Request):
 
 
 class SlashFix:
-    """Collapse '//' so {base}/message:send works with or without a trailing slash. Never redirects."""
+    """Pure ASGI middleware: collapse '//' so {base}/message:send works with or without a trailing slash."""
     def __init__(self, inner): self.inner = inner
 
     async def __call__(self, scope, receive, send):
@@ -610,4 +610,14 @@ class SlashFix:
         await self.inner(scope, receive, send)
 
 
-app = SlashFix(api)
+@api.exception_handler(404)
+async def not_found(request: Request, exc):
+    # Unknown routes show the path the app received (helps debug Vercel routing).
+    # Task paths stay generic so another user's task id is never echoed.
+    p = request.url.path
+    msg = "Not found" if "/tasks/" in p else f"No route for {request.method} {p}"
+    return err(404, "NOT_FOUND", msg)
+
+
+api.add_middleware(SlashFix)
+app = api   # plain FastAPI instance, which Vercel's Python runtime detects
