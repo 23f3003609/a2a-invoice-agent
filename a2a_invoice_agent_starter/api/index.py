@@ -21,9 +21,10 @@ BASE_PATH = (urlparse(BASE_URL_ENV).path.rstrip("/") if BASE_URL_ENV else "/a2a"
 REDIS_URL = (os.environ.get("UPSTASH_REDIS_REST_URL") or os.environ.get("KV_REST_API_URL") or "").rstrip("/")
 REDIS_TOKEN = os.environ.get("UPSTASH_REDIS_REST_TOKEN") or os.environ.get("KV_REST_API_TOKEN") or ""
 
-LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://aipipe.org/openai/v1").rstrip("/")
-LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
-LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4.1-mini")
+# accepts either LLM_* or the starter's OPENAI_* variable names
+LLM_BASE_URL = (os.environ.get("LLM_BASE_URL") or os.environ.get("OPENAI_BASE_URL") or "https://aipipe.org/openai/v1").rstrip("/")
+LLM_API_KEY = os.environ.get("LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+LLM_MODEL = os.environ.get("LLM_MODEL") or os.environ.get("OPENAI_MODEL") or "gpt-4.1-mini"
 LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "36"))
 LLM_MOCK = os.environ.get("LLM_MOCK") == "1"            # local protocol testing only
 
@@ -172,7 +173,7 @@ def base_url(req: Request):
     if BASE_URL_ENV:
         return BASE_URL_ENV
     host = req.headers.get("x-forwarded-host") or req.headers.get("host")
-    return f"https://{host}{BASE_PATH}/"
+    return f"https://{host}{BASE_PATH}"   # no trailing slash: submit https://host/a2a
 
 
 def principal_of(req: Request):
